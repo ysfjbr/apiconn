@@ -1,0 +1,21 @@
+{
+    "name": "gnm/apiconn",
+    "description": "Api connector for microservices",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Yousef Jaber",
+            "email": "ysf_jbr@msn.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "firebase/php-jwt": "dev-master"
+    },
+    "autoload": {
+        "psr-4": {
+            "Gnm\\ApiConn\\": "src/"
+        }
+    }
+}
