@@ -3,7 +3,6 @@
 namespace Gnm\ApiConn;
 
 use Illuminate\Support\Facades\Cache;
-use GuzzleHttp\Client;
 use Firebase\JWT\JWT;
 
 use Carbon\Carbon;
@@ -22,21 +21,18 @@ class ApiWrapper{
 
     public function getData($entity, $method = "GET",  $params=[])
     {
-        //$client = new Client();
-
         $endpoint = $this->ServiceUrl .'/'. $entity;
 
         #dd($user);
-
 
         Cache::increment('REQAPICOUNT');
 
         // How many jobs now!
         $ReqQueue = Cache::get('REQAPICOUNT');
 
-        // wait according to count of jobs  (every one job sleep 0.3 sec in default)
+        // wait according to count of jobs  (if one job sleep 0.5 sec, 2 jobs sleep 1 sec ...)
 
-        usleep($ReqQueue * env('API_SLEEP_TIME', 300) * 1000);
+        usleep($ReqQueue * env('API_SLEEP_TIME', 1000) * 1000);
 
 
         // for testing only!
@@ -45,13 +41,19 @@ class ApiWrapper{
             return Cache::get('REQAPICOUNT');
         }
 
-
         // Register this request for monitoring (URl & Time)
         $ReqsInCache =  (Cache::has('APIREQUESTS')) ? Cache::get('APIREQUESTS') : [];
 
         $mt = microtime(true);
         $millsec = round( $mt * 1000 ) - (floor($mt) * 1000) ;
-        array_push($ReqsInCache, 'URL : '. $endpoint.' | Params: '.implode(',',$params).' | Time : '.now()." > ".$millsec); //
+
+        $paramStr = '';
+        try {
+            $paramStr = implode(',',$params);
+        } catch (\Throwable $th) {
+            //throw $th;
+        }
+        array_push($ReqsInCache, 'URL : '. $endpoint.' | Params: '.$paramStr.' | Time : '.now()." > ".$millsec);
         Cache::put('APIREQUESTS', $ReqsInCache, Carbon::now()->addDay(1));
 
         $getParams = implode('&', array_map(
@@ -69,7 +71,7 @@ class ApiWrapper{
         if($method === "GET")
             $endpoint = $endpoint.'?'.$getParams;
         else if($method === "POST")
-            $endpoint = $endpoint.'/save';
+            $endpoint = $endpoint;
         else if($method === "PUT")
             $endpoint = $endpoint.'/update';
 
@@ -80,7 +82,7 @@ class ApiWrapper{
         $user= Auth::user();
 
         $user = array (
-            'sub' => $user->id,
+            'sub' => $user->sub,
             'name' => $user->name,
             'admin' => true,
           );

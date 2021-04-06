@@ -22,8 +22,7 @@ class ApiModel{
         return $this->apiW->getData($this->entity,"GET", $params);
     }
 
-
-    public function save($params=[])
+    public function create($params=[])
     {
         return $this->apiW->getData($this->entity,"POST", $params);
     }
