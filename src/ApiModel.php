@@ -6,13 +6,14 @@ class ApiModel{
 
     protected $entity;
 
-    protected $primaryKey = 'id';
+    protected $primaryKey;
 
     protected $apiW;
 
-    public function __construct($entity)
+    public function __construct($entity, $primaryKey = 'id')
     {
         $this->entity = $entity;
+        $this->primaryKey = $primaryKey;
         $this->apiW = app(ApiWrapper::class);
     }
 
