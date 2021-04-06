@@ -34,9 +34,9 @@ class ApiWrapper{
         // How many jobs now!
         $ReqQueue = Cache::get('REQAPICOUNT');
 
-        // wait according to count of jobs  (if one job sleep 0.5 sec, 2 jobs sleep 1 sec ...)
+        // wait according to count of jobs  (every one job sleep 0.3 sec in default)
 
-        usleep($ReqQueue * 200000);
+        usleep($ReqQueue * env('API_SLEEP_TIME', 300) * 1000);
 
 
         // for testing only!
