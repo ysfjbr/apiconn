@@ -53,6 +53,7 @@ class ApiWrapper{
         } catch (\Throwable $th) {
             //throw $th;
         }
+
         array_push($ReqsInCache, 'URL : '. $endpoint.' | Params: '.$paramStr.' | Time : '.now()." > ".$millsec);
         Cache::put('APIREQUESTS', $ReqsInCache, Carbon::now()->addDay(1));
 
@@ -75,7 +76,7 @@ class ApiWrapper{
         else if($method === "PUT")
             $endpoint = $endpoint.'/update';
 
-        $ch = curl_init($endpoint.'/update');
+        $ch = curl_init($endpoint);
 
         $data_json = json_encode($params);
 
@@ -104,12 +105,7 @@ class ApiWrapper{
 
         return $result;
 
-        //return $result;
-        /* if($isReturnArray) return json_decode((string)$result);
-
-        return response()->json(json_decode((string)$result)); */
     }
-
 
 
     public static function getCacheKey($type, $key){
