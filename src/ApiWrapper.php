@@ -57,6 +57,8 @@ class ApiWrapper{
         array_push($ReqsInCache, 'URL : '. $endpoint.' | Params: '.$paramStr.' | Time : '.now()." > ".$millsec);
         Cache::put('APIREQUESTS', $ReqsInCache, Carbon::now()->addDay(1));
 
+        $params_arr = (is_array($params))? $params: get_object_vars( $params );
+
         $getParams = implode('&', array_map(
             function ($v, $k) {
                 if(is_array($v)){
@@ -66,7 +68,7 @@ class ApiWrapper{
                 }
             },
             $params,
-            array_keys($params)
+            array_keys($params_arr)
         ));
 
         if($method === "GET")

@@ -2,7 +2,7 @@
     "name": "gnm/apiconn",
     "description": "Api connector for microservices",
     "type": "library",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "license": "MIT",
     "authors": [
         {
