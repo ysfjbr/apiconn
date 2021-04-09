@@ -67,7 +67,7 @@ class ApiWrapper{
                     return $k.'='.$v;
                 }
             },
-            $params,
+            $params_arr,
             array_keys($params_arr)
         ));
 
