@@ -57,7 +57,7 @@ class ApiWrapper{
         array_push($ReqsInCache, 'URL : '. $endpoint.' | Params: '.$paramStr.' | Time : '.now()." > ".$millsec);
         Cache::put('APIREQUESTS', $ReqsInCache, Carbon::now()->addDay(1));
 
-        $params_arr = (is_array($params))? $params: get_object_vars( $params );
+        $params_arr = (is_array($params))? $params: $params->all();
 
         $getParams = implode('&', array_map(
             function ($v, $k) {
