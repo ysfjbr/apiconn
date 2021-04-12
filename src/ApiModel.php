@@ -10,11 +10,11 @@ class ApiModel{
 
     protected $apiW;
 
-    public function __construct($entity, $primaryKey = 'id')
+    public function __construct($wrapper, $entity, $primaryKey = 'id')
     {
         $this->entity = $entity;
         $this->primaryKey = $primaryKey;
-        $this->apiW = app(ApiWrapper::class);
+        $this->apiW = $wrapper;
     }
 
     public function all($params=[])
