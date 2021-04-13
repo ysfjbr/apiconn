@@ -7,6 +7,7 @@ use Firebase\JWT\JWT;
 
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class ApiWrapper{
 
@@ -21,6 +22,9 @@ class ApiWrapper{
 
     public function getData($entity, $method = "GET",  $params=[])
     {
+
+        #dd($params);
+
         $endpoint = $this->ServiceUrl .'/'. $entity;
 
         #dd($user);
@@ -57,19 +61,22 @@ class ApiWrapper{
         array_push($ReqsInCache, 'URL : '. $endpoint.' | Params: '.$paramStr.' | Time : '.now()." > ".$millsec);
         Cache::put('APIREQUESTS', $ReqsInCache, Carbon::now()->addDay(1));
 
-        $params_arr = (is_array($params))? $params: $params->all();
+        $getParams = '';
+        if($params){
+            $params_arr = (is_array($params))? $params: $params->all();
 
-        $getParams = implode('&', array_map(
-            function ($v, $k) {
-                if(is_array($v)){
-                    return $k.'[]='.implode('&'.$k.'[]=', $v);
-                }else{
-                    return $k.'='.$v;
-                }
-            },
-            $params_arr,
-            array_keys($params_arr)
-        ));
+            $getParams = implode('&', array_map(
+                function ($v, $k) {
+                    if(is_array($v)){
+                        return $k.'[]='.implode('&'.$k.'[]=', $v);
+                    }else{
+                        return $k.'='.$v;
+                    }
+                },
+                $params_arr,
+                array_keys($params_arr)
+            ));
+        }
 
         if($method === "GET")
             $endpoint = $endpoint.'?'.$getParams;
@@ -77,10 +84,11 @@ class ApiWrapper{
             $endpoint = $endpoint;
         else if($method === "PUT")
             $endpoint = $endpoint.'/update';
+        else if($method === "DELETE")
+            $endpoint = $endpoint.'/del'.'?'.$getParams;
 
-        $ch = curl_init($endpoint);
 
-        $data_json = json_encode($params);
+        //$data_json = json_encode($params);
 
         $user= Auth::user();
 
@@ -93,11 +101,35 @@ class ApiWrapper{
         $token = JWT::encode($user, $this->ServiceSecret);
 
         $authorization = "Authorization: Bearer ".$token;
+        $data_json = [];
 
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json' , $authorization ));
+        $xform_data = false;
+
+        foreach($params as $key => $val)
+        {
+            //$data_json[$key] =  $val;
+
+            if(is_object($val) ){
+
+                if(get_class ($val) === "Illuminate\Http\UploadedFile"){
+                    $temp = $val->store('temp');
+                    $temp = storage_path('app/') . $temp;
+                    #dd($temp );
+                    $xform_data = true;
+                    $data_json[$key] =  curl_file_create($temp);
+                }
+            }
+            else{
+                $data_json[$key] = $val;
+            }
+        }
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $endpoint);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array( $authorization ));
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS,$data_json);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, ($xform_data)? $data_json:  $getParams );
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
         $result = curl_exec($ch);
         curl_close($ch);

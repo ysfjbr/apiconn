@@ -37,4 +37,8 @@ class ApiModel{
         return $this->apiW->getData($this->entity,"PUT", $params);
     }
 
+    public function delete($params=[])
+    {
+        return $this->apiW->getData($this->entity,"DELETE", $params);
+    }
 }
