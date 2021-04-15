@@ -2,6 +2,7 @@
 
 namespace Gnm\ApiConn;
 
+use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Firebase\JWT\JWT;
 
@@ -89,13 +90,16 @@ class ApiWrapper{
 
 
         //$data_json = json_encode($params);
+        $userId = '';
 
-        $user= Auth::user();
+        try {
+            $userId = User::getAuthUserUid();
+        } catch (\Throwable $th) {
+            $userId = Auth::user()->sub;
+        }
 
         $user = array (
-            'sub' => $user->sub,
-            'name' => $user->name,
-            'admin' => true,
+            'sub' => $userId,
           );
 
         $token = JWT::encode($user, $this->ServiceSecret);
