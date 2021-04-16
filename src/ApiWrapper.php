@@ -62,8 +62,13 @@ class ApiWrapper{
         array_push($ReqsInCache, 'URL : '. $endpoint.' | Params: '.$paramStr.' | Time : '.now()." > ".$millsec);
         Cache::put('APIREQUESTS', $ReqsInCache, Carbon::now()->addDay(1));
 
-        $getParams = '';
-        if($params){
+        $xform_data = true;
+        $getParams = '';   // key1=val1&key2=val2
+        $data_json = [];   // x-data-form as array
+
+        if($params && ($method === "GET" || $method === "DELETE")){
+            $xform_data = false;
+
             $params_arr = (is_array($params))? $params: $params->all();
 
             $getParams = implode('&', array_map(
@@ -77,7 +82,35 @@ class ApiWrapper{
                 $params_arr,
                 array_keys($params_arr)
             ));
+        }else{
+            $xform_data = true;
+            $attachFile = false;
+            foreach($params as $key => $val)
+            {
+                //$data_json[$key] =  $val;
+
+                if(is_object($val) ){
+
+                    if(get_class ($val) === "Illuminate\Http\UploadedFile"){
+                        $temp = $val->store('temp');
+                        $temp = storage_path('app/') . $temp;
+                        #dd($temp );
+                        $attachFile = true;
+                        $data_json[$key] =  curl_file_create($temp);
+                    }
+                }
+                else{
+                    $data_json[$key] = $val;
+                }
+            }
+
+            if(!$attachFile)
+                $data_json = http_build_query($data_json);
         }
+
+        #$data_json = json_encode($data_json);
+
+        #dd($data_json);
 
         if($method === "GET")
             $endpoint = $endpoint.'?'.$getParams;
@@ -87,7 +120,6 @@ class ApiWrapper{
             $endpoint = $endpoint.'/update';
         else if($method === "DELETE")
             $endpoint = $endpoint.'/del'.'?'.$getParams;
-
 
         //$data_json = json_encode($params);
         $userId = '';
@@ -105,35 +137,15 @@ class ApiWrapper{
         $token = JWT::encode($user, $this->ServiceSecret);
 
         $authorization = "Authorization: Bearer ".$token;
-        $data_json = [];
 
-        $xform_data = false;
 
-        foreach($params as $key => $val)
-        {
-            //$data_json[$key] =  $val;
-
-            if(is_object($val) ){
-
-                if(get_class ($val) === "Illuminate\Http\UploadedFile"){
-                    $temp = $val->store('temp');
-                    $temp = storage_path('app/') . $temp;
-                    #dd($temp );
-                    $xform_data = true;
-                    $data_json[$key] =  curl_file_create($temp);
-                }
-            }
-            else{
-                $data_json[$key] = $val;
-            }
-        }
 
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $endpoint);
         curl_setopt($ch, CURLOPT_HTTPHEADER, array( $authorization ));
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, ($xform_data)? $data_json:  $getParams );
+        curl_setopt($ch, CURLOPT_POSTFIELDS, ($xform_data)? $data_json :  $getParams );
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
         $result = curl_exec($ch);
         curl_close($ch);
