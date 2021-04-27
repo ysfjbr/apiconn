@@ -142,7 +142,7 @@ class ApiWrapper{
 
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $endpoint);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array( $authorization ));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array( $authorization, 'Accept: application/json' ));
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, ($xform_data)? $data_json :  $getParams );
