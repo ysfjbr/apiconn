@@ -8,7 +8,7 @@ class ApiModel{
 
     protected $primaryKey;
 
-    protected $apiW;
+    public $apiW;
 
     public function __construct($wrapper, $entity, $primaryKey = 'id')
     {

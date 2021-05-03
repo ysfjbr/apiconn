@@ -29,7 +29,6 @@ class ApiWrapper{
         $endpoint = $this->ServiceUrl .'/'. $entity;
 
         #dd($user);
-
         Cache::increment('REQAPICOUNT');
 
         // How many jobs now!
@@ -122,23 +121,8 @@ class ApiWrapper{
             $endpoint = $endpoint.'/del'.'?'.$getParams;
 
         //$data_json = json_encode($params);
-        $userId = '';
 
-        try {
-            $userId = User::getAuthUserUid();
-        } catch (\Throwable $th) {
-            $userId = Auth::user()->sub;
-        }
-
-        $user = array (
-            'sub' => $userId,
-          );
-
-        $token = JWT::encode($user, $this->ServiceSecret);
-
-        $authorization = "Authorization: Bearer ".$token;
-
-
+        $authorization = "Authorization: Bearer ".$this->getToken();
 
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $endpoint);
@@ -155,6 +139,20 @@ class ApiWrapper{
 
         return $result;
 
+    }
+
+    public function getToken(){
+        $userId = '';
+        try {
+            $userId = User::getAuthUserUid();
+        } catch (\Throwable $th) {
+            $userId = Auth::user()->sub;
+        }
+        $user = array (
+            'sub' => $userId,
+        );
+
+        return JWT::encode($user, $this->ServiceSecret);
     }
 
 
