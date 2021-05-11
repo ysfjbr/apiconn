@@ -21,12 +21,12 @@ class ApiWrapper{
         $this->ServiceSecret = $ServiceSecret;
     }
 
-    public function getData($entity, $method = "GET",  $params=[])
+    public function getData($entity, $method = "GET",  $params=[], $requestURL = "")
     {
 
         #dd($params);
 
-        $endpoint = $this->ServiceUrl .'/'. $entity;
+        $endpoint = $this->ServiceUrl .'/'. $entity . $requestURL;
 
         #dd($user);
         Cache::increment('REQAPICOUNT');

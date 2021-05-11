@@ -41,4 +41,9 @@ class ApiModel{
     {
         return $this->apiW->getData($this->entity,"DELETE", $params);
     }
+
+    public function request($requsetURL="",$method = 'GET', $params=[])
+    {
+        return $this->apiW->getData($this->entity,$method, $params, $requsetURL);
+    }
 }
