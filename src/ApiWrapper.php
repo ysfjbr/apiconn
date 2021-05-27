@@ -9,8 +9,10 @@ use Firebase\JWT\JWT;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
-class ApiWrapper{
+class ApiWrapper
+{
 
     protected $ServiceUrl;
     protected $ServiceSecret;
@@ -21,12 +23,12 @@ class ApiWrapper{
         $this->ServiceSecret = $ServiceSecret;
     }
 
-    public function getData($entity, $method = "GET",  $params=[], $requestURL = "")
+    public function getData($entity, $method = "GET",  $params = [], $requestURL = "")
     {
 
         #dd($params);
 
-        $endpoint = $this->ServiceUrl .'/'. $entity . $requestURL;
+        $endpoint = $this->ServiceUrl . '/' . $entity . $requestURL;
 
         #dd($user);
         Cache::increment('REQAPICOUNT');
@@ -40,7 +42,7 @@ class ApiWrapper{
 
 
         // for testing only!
-        if($entity == "FAKE") {
+        if ($entity == "FAKE") {
             Cache::decrement('REQAPICOUNT');
             return Cache::get('REQAPICOUNT');
         }
@@ -49,61 +51,59 @@ class ApiWrapper{
         $ReqsInCache =  (Cache::has('APIREQUESTS')) ? Cache::get('APIREQUESTS') : [];
 
         $mt = microtime(true);
-        $millsec = round( $mt * 1000 ) - (floor($mt) * 1000) ;
+        $millsec = round($mt * 1000) - (floor($mt) * 1000);
 
         $paramStr = '';
         try {
-            $paramStr = implode(',',$params);
+            $paramStr = implode(',', $params);
         } catch (\Throwable $th) {
             //throw $th;
         }
 
-        array_push($ReqsInCache, 'URL : '. $endpoint.' | Params: '.$paramStr.' | Time : '.now()." > ".$millsec);
+        array_push($ReqsInCache, 'URL : ' . $endpoint . ' | Params: ' . $paramStr . ' | Time : ' . now() . " > " . $millsec);
         Cache::put('APIREQUESTS', $ReqsInCache, Carbon::now()->addDay(1));
 
         $xform_data = true;
         $getParams = '';   // key1=val1&key2=val2
         $data_json = [];   // x-data-form as array
 
-        if($params && ($method === "GET" || $method === "DELETE")){
+        if ($params && ($method === "GET" || $method === "DELETE")) {
             $xform_data = false;
 
-            $params_arr = (is_array($params))? $params: $params->all();
+            $params_arr = (is_array($params)) ? $params : $params->all();
 
             $getParams = implode('&', array_map(
                 function ($v, $k) {
-                    if(is_array($v)){
-                        return $k.'[]='.implode('&'.$k.'[]=', $v);
-                    }else{
-                        return $k.'='.$v;
+                    if (is_array($v)) {
+                        return $k . '[]=' . implode('&' . $k . '[]=', $v);
+                    } else {
+                        return $k . '=' . $v;
                     }
                 },
                 $params_arr,
                 array_keys($params_arr)
             ));
-        }else{
+        } else {
             $xform_data = true;
             $attachFile = false;
-            foreach($params as $key => $val)
-            {
+            foreach ($params as $key => $val) {
                 //$data_json[$key] =  $val;
 
-                if(is_object($val) ){
+                if (is_object($val)) {
 
-                    if(get_class ($val) === "Illuminate\Http\UploadedFile"){
+                    if (get_class($val) === "Illuminate\Http\UploadedFile") {
                         $temp = $val->store('temp');
                         $temp = storage_path('app/') . $temp;
                         #dd($temp );
                         $attachFile = true;
                         $data_json[$key] =  curl_file_create($temp);
                     }
-                }
-                else{
+                } else {
                     $data_json[$key] = $val;
                 }
             }
 
-            if(!$attachFile)
+            if (!$attachFile)
                 $data_json = http_build_query($data_json);
         }
 
@@ -111,25 +111,25 @@ class ApiWrapper{
 
         #dd($data_json);
 
-        if($method === "GET")
-            $endpoint = $endpoint.'?'.$getParams;
-        else if($method === "POST")
+        if ($method === "GET")
+            $endpoint = $endpoint . '?' . $getParams;
+        else if ($method === "POST")
             $endpoint = $endpoint;
-        else if($method === "PUT")
-            $endpoint = $endpoint.'/update';
-        else if($method === "DELETE")
-            $endpoint = $endpoint.'/del'.'?'.$getParams;
+        else if ($method === "PUT")
+            $endpoint = $endpoint . '/update';
+        else if ($method === "DELETE")
+            $endpoint = $endpoint . '/del' . '?' . $getParams;
 
         //$data_json = json_encode($params);
 
-        $authorization = "Authorization: Bearer ".$this->getToken();
+        $authorization = "Authorization: Bearer " . $this->getToken();
 
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $endpoint);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array( $authorization, 'Accept: application/json' ));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array($authorization, 'Accept: application/json'));
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, ($xform_data)? $data_json :  $getParams );
+        curl_setopt($ch, CURLOPT_POSTFIELDS, ($xform_data) ? $data_json :  $getParams);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
         $result = curl_exec($ch);
         curl_close($ch);
@@ -137,18 +137,22 @@ class ApiWrapper{
         // After Requesting jobs will be decreased by 1
         Cache::decrement('REQAPICOUNT');
 
+        if (!$result) {
+            Log::error("Error to connect. ");
+            return ("Error to connect with " . $endpoint);
+        }
         return $result;
-
     }
 
-    public function getToken(){
+    public function getToken()
+    {
         $userId = '';
         try {
             $userId = User::getAuthUserUid();
         } catch (\Throwable $th) {
             $userId = Auth::user()->sub;
         }
-        $user = array (
+        $user = array(
             'sub' => $userId,
         );
 
@@ -156,7 +160,8 @@ class ApiWrapper{
     }
 
 
-    public static function getCacheKey($type, $key){
+    public static function getCacheKey($type, $key)
+    {
         // Key and Type input tirm and to upper case
         $key = strtoupper(trim($key));
         $type = strtoupper(trim($type));
@@ -165,10 +170,10 @@ class ApiWrapper{
         $key = preg_replace('/\s+/', ' ', $key);
 
         // Replace Spaces with (+)
-        $key = str_replace(" ","+", $key);
+        $key = str_replace(" ", "+", $key);
 
         // for example " The   World " => "THE+WORLD"
-        return 'SHOW.'.$type.'.'.$key;
+        return 'SHOW.' . $type . '.' . $key;
     }
 
     //Get array of Last requests to 3rd party in last 24 hours
@@ -176,6 +181,4 @@ class ApiWrapper{
     {
         return (Cache::has('APIREQUESTS')) ? Cache::get('APIREQUESTS') : [];
     }
-
-
 }
