@@ -152,9 +152,14 @@ class ApiWrapper
         } catch (\Throwable $th) {
             $userId = Auth::user()->sub;
         }
+        
+        $lang = (function_exists('getLocale')) ?  getLocale(): 'en';
+
         $user = array(
             'sub' => $userId,
-        );
+            'lang' => $lang
+        );        
+
 
         return JWT::encode($user, $this->ServiceSecret);
     }
