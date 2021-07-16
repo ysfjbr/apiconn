@@ -164,6 +164,10 @@ class ApiWrapper
         return JWT::encode($user, $this->ServiceSecret);
     }
 
+    public function getUrlWithToken($entity, $requestURL = "")
+    {
+        return $this->ServiceUrl . '/' . $entity . $requestURL.($requestURL == "" ? '?' : '&').'_TOKEN='.$this->getToken();
+    }
 
     public static function getCacheKey($type, $key)
     {

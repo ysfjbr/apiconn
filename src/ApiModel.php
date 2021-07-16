@@ -46,4 +46,9 @@ class ApiModel{
     {
         return $this->apiW->getData($this->entity,$method, $params, $requsetURL);
     }
+
+    public function getUrlWithToken($id, $requsetURL = "")
+    {
+        return $this->apiW->getUrlWithToken($this->entity.'/'.$id, $requsetURL);
+    }
 }
